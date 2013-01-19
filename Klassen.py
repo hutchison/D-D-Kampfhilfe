@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import math
+from termcolor import colored
 
 class Charakter(object):
     """Ein normaler Charakter."""
@@ -107,7 +108,9 @@ class Charakter(object):
 
     def __str__(self):
         g = self.geschlecht
-        r = u'{name} ist {artikel} {volk} {klasse}'.format(
+        r = colored(unichr(0x2606) + u' {name}'.format(name=self.name),
+                    'green')
+        r += u' ist {artikel} {volk} {klasse}'.format(
             name=self.name,
             artikel=gend_adj(u'Artikel', g),
             volk=gend_adj(self.volk, g),
@@ -149,12 +152,13 @@ class Charakter(object):
             r += u'  ' + w.kurz_mit_boni(self.angriffsbonus(w),
                                         self.schadensbonus(w)) + u'\n'
 
-        r += u'### Rüstung\n'
-        for rs in self.ruestung:
-            r += u'  ' + unicode(rs) + '\n'
+        if self.ruestung:
+            r += u'### Rüstung\n'
+            for rs in self.ruestung:
+                r += u'  ' + unicode(rs) + '\n'
 
         r += u'Rüstungsklasse: {rk}\n'.format(rk=self.ruestungsklasse())
-        r += u'Trefferpunkte: {tp:2d}\n'.format(tp=self.trefferpunkte)
+        r += u'Trefferpunkte: {tp:2d}'.format(tp=self.trefferpunkte)
 
         return r
 
@@ -290,10 +294,11 @@ class Monster(object):
         self.erfahrungspunkte = erfahrungspunkte
 
     def __str__(self):
-        r = u'{name}\n'.format(name=self.name)
+        r =  colored(unichr(0x2620) + u'  {name}\n'.format(name=self.name),
+                     'red', attrs=['blink'])
         r += u'TP {tp:2d}   IN {ini:2d}\n'.format(tp=self.trefferpunkte,
                                                ini=self.initiative)
-        r += u'RK {rk:2d}   BR {br:2d}\n'.format(rk=self.ruestungsklasse,
+        r += u'RK {rk:2d}   BR {br:2d}'.format(rk=self.ruestungsklasse,
                                               br=self.bewegungsrate)
         return r
 
