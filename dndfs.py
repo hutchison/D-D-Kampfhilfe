@@ -5,7 +5,7 @@ import sys
 import readline
 from Vorgefertigtes import regdar, eberk, naull, jozan, tordek, kerwyn
 from Monster import monster, erschaffe_monster
-from Klassen import Monster
+from Klassen import Monster, Charakter
 from termcolor import colored
 
 party = [regdar, eberk, naull, jozan, tordek, kerwyn]
@@ -49,42 +49,87 @@ def kommandoliste():
     print ', '.join(sorted(cmds.keys()))
 
 def liste_gegner_auf():
+    global gegner
     print str(len(gegner)) + " Gegner in der Liste"
     for g in gegner:
         print unicode(g)
 
 def tp_aendern(p, t):
-    if t > 0:
+    if t >= 0:
         p.trefferpunkte = t
     else:
-        p.trefferpunkte = max(0, p.trefferpunkte+t) # JA, PLUS!
+        p.trefferpunkte = max(0, p.trefferpunkte + t) # JA, PLUS!
+
+def fuege_schaden_zu(p, s):
+    p.trefferpunkte = p.trefferpunkte - s if s < p.trefferpunkte else 0
+
+def waehle_ziel(ist_monster):
+    global party, gegner
+    if ist_monster:
+        l = party + gegner
+    else:
+        l = gegner + party
+    print u'Wen möchtest du angreifen?'
+    for i, a in enumerate(l, 1):
+        print unicode(i) + u':',
+        if isinstance(a, Charakter):
+             print colored(unicode(a.name), 'green')
+        else:
+             print colored(unicode(a.name), 'red')
+    while True:
+        wahl = raw_input('1-'+str(len(l))+' # ')
+        try:
+            if wahl:
+                wahl = int(wahl)
+                if 1 <= wahl <= len(l):
+                    return l[wahl-1]
+                else:
+                    print wahl, 'hab ich nicht. Nochmal!'
+        except ValueError:
+            lern_schreiben()
+
+def lese_schaden_ein():
+    while True:
+        s = raw_input('Wieviel Schaden? ')
+        try:
+            if s:
+                return int(s)
+        except ValueError:
+            lern_schreiben()
+
+def lern_schreiben():
+    print colored(unichr(0x26a1) + u' Lern schreiben!', 'red')
+
 
 def zeige_kampf():
-    global gegner
+    global party, gegner, besiegte_gegner
     L = sorted(party + gegner, key=lambda x: x.initiative, reverse=True)
     print (u'Es kämpfen ' + u', '.join([x.name for x in party]) +
            u' gegen ' + u', '.join([x.name for x in gegner]))
     M = len(L)
     i = 0
     while filter(lambda x: isinstance(x, Monster) and x.trefferpunkte > 0, L):
+    # solange noch alle Monster am Leben sind:
         m = L[i]
         if m.trefferpunkte:
             print
             print unicode(m)
             print
             while True:
-                print (u'Aktionen: weiter [' + unichr(0x21b5) +
-                       u' ], TP ändern [t]')
+                print (u'weiter [' + unichr(0x21b5) + u' ], Angriff [a]')
                 print colored(unichr(0x2694), 'blue'),
                 a = raw_input(' ')
                 if a:
-                    if a == 't':
-                        t = int(raw_input('# ') or 0)
-                        tp_aendern(m, t)
-                        print (unicode(m.name) + u' hat nun ' + 
-                               unicode(m.trefferpunkte) + u' TP')
-                        if isinstance(m, Monster):
-                            besiegte_gegner.append(m)
+                    if a == 'a':
+                        opfer = waehle_ziel(isinstance(m, Monster))
+                        print u'Du brauchst eine', opfer.ruestungsklasse, u'um zu treffen.'
+                        schaden = lese_schaden_ein()
+                        fuege_schaden_zu(opfer, schaden)
+                        print (unicode(opfer.name) + u' hat nun ' + 
+                               unicode(opfer.trefferpunkte) + u' TP')
+                        if isinstance(opfer, Monster) and not opfer.trefferpunkte:
+                            besiegte_gegner.append(opfer)
+                            del gegner[gegner.index(opfer)]
                         break
                     else:
                         print colored(unichr(0x26a1) + u' ' + unicode(a)
